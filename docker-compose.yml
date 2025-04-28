@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MySQL сервис
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: authdb
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+
+  backend:
+    build:
+      context: ./packages/vet-app-auth
+      dockerfile: Dockerfile
+    container_name: nest_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: authdb
+      JWT_SECRET: 1bdca2be87157f0b5ac436fba4851a6a0de86c3feb95f470d25bd644ecb470e62b342bdcfa262dd043ffed1cfb4236c502481509c6767b5e7876d5e89eb3cc32fd9614f278be48ae8d20468a032b5c5b1fe639d9ad25a2945c9ceeac0a04b4f8d970f445cb4e467814bfd9e2031348a213b247d37b167446e77675194dc0b7764ed88e73da3b4adcabc2030e753f46c30f8f37ef39bf95539c824df8efdf092866a095e39d2d93db05371e7ffb495434c58bc03f22ac5525006f7ec7b01a2c3c7f6d3bca3f868b2a0740317f97ce1b565dc64fb22d284570f223b44eaf1f57daed2d2e5a169d5a008c2913b66a6095145eca332797c081059b4f94810a95075a
+      NODE_ENV: development
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./packages/vet-app-auth:/usr/src/app
+
+  # React фронтенд
+  frontend:
+    build:
+      context: ./apps/vet-app-frontend
+      dockerfile: Dockerfile
+    container_name: react_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    environment:
+      REACT_APP_API_URL: http://backend:3000
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/vet-app-frontend:/usr/src/app
+
+volumes:
+  mysql-data:
