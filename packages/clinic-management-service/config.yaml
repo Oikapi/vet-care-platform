@@ -1,4 +1,0 @@
-mysql:
-  dsn: "root:password@tcp(mysql:3306)/clinic_db?charset=utf8mb4&parseTime=True"
-redis:
-  addr: "redis:6379"
