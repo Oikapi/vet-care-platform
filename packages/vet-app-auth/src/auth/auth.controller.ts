@@ -7,7 +7,7 @@ import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { CreateClinicDto } from 'src/clinics/dto/create-clinic.dto';
 import { LocalAuthGuard } from 'src/guards/local-auth.guard';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(
     private authService: AuthService,
@@ -18,8 +18,7 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   async login(@Request() req) {
-    console.log(req);
-    console.log(process.env);
+    console.log('auth')
     return this.authService.login(req.user);
   }
 

@@ -1,17 +1,51 @@
-version: '3.8'
-
 services:
-  # MySQL сервис
+  gateway:
+    build:
+      context: ./packages/vet-app-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth_backend:3000
+      CLINIC_MANAGEMENT_SERVICE_URL: http://clinic_management_backend:8080
+      LAB_SERVICE_URL: http://lab_service:3003
+    depends_on:
+      - auth_backend
+      - clinic_management_backend
+      - redis
+    volumes:
+      - ./packages/vet-app-gateway:/usr/src/app
+
+  # Сервис для управления клиниками
+  clinic_management_backend:
+    build:
+      context: ./packages/vet-app-clinic-management
+      dockerfile: Dockerfile
+    container_name: managment_backend
+    ports:
+      - "3002:8080" 
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - MYSQL_DSN=root:password@tcp(mysql:3306)/clinic_db?charset=utf8mb4&parseTime=True&loc=Local
+      - REDIS_ADDR=redis:6379
+
+  # Сервис для MySQL
   mysql:
     image: mysql:8.0
     container_name: mysql_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: authdb
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: auth_db  
     ports:
       - "3306:3306"
     volumes:
+      - ./packages/vet-app-clinic-management/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -19,30 +53,43 @@ services:
       timeout: 10s
       retries: 5
 
-
-  backend:
+  # Сервис для авторизации
+  auth_backend:
     build:
       context: ./packages/vet-app-auth
       dockerfile: Dockerfile
-    container_name: nest_backend
+    container_name: auth_backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"  # Порт 3001 для этого сервиса
     environment:
+      PORT: 3000
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USERNAME: root
-      DB_PASSWORD: rootpassword
-      DB_NAME: authdb
-      JWT_SECRET: 1bdca2be87157f0b5ac436fba4851a6a0de86c3feb95f470d25bd644ecb470e62b342bdcfa262dd043ffed1cfb4236c502481509c6767b5e7876d5e89eb3cc32fd9614f278be48ae8d20468a032b5c5b1fe639d9ad25a2945c9ceeac0a04b4f8d970f445cb4e467814bfd9e2031348a213b247d37b167446e77675194dc0b7764ed88e73da3b4adcabc2030e753f46c30f8f37ef39bf95539c824df8efdf092866a095e39d2d93db05371e7ffb495434c58bc03f22ac5525006f7ec7b01a2c3c7f6d3bca3f868b2a0740317f97ce1b565dc64fb22d284570f223b44eaf1f57daed2d2e5a169d5a008c2913b66a6095145eca332797c081059b4f94810a95075a
+      DB_PASSWORD: password
+      DB_NAME: auth_db
+      JWT_SECRET: your_jwt_secret
       NODE_ENV: development
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
     volumes:
       - ./packages/vet-app-auth:/usr/src/app
 
-  # React фронтенд
+  # Redis сервис
+  redis:
+    image: redis:7.0
+    container_name: redis_cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Сервис для фронтенда
   frontend:
     build:
       context: ./apps/vet-app-frontend
@@ -50,11 +97,11 @@ services:
     container_name: react_frontend
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "5173:80"
     environment:
-      REACT_APP_API_URL: http://backend:3000
+      REACT_APP_API_URL: http://localhost:3000
     depends_on:
-      - backend
+      - gateway
     volumes:
       - ./apps/vet-app-frontend:/usr/src/app
 

@@ -1,0 +1,83 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  models.Inventory:
+    properties:
+      id:
+        type: integer
+      medicineName:
+        type: string
+      quantity:
+        type: integer
+      threshold:
+        description: Порог для автозаказа
+        type: integer
+    type: object
+  models.Schedule:
+    properties:
+      doctorID:
+        type: integer
+      endTime:
+        type: string
+      id:
+        type: integer
+      startTime:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/inventory:
+    get:
+      description: Retrieve complete list of inventory items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Inventory'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all inventory items
+      tags:
+      - inventory
+  /api/schedules/{doctorID}:
+    get:
+      consumes:
+      - application/json
+      description: Get all schedules for specific doctor
+      parameters:
+      - description: Doctor ID
+        in: path
+        name: doctorID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Schedule'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get schedules by doctor ID
+      tags:
+      - schedules
+swagger: "2.0"
