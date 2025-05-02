@@ -25,7 +25,7 @@ func main() {
 
 	// Подключение к MySQL
 	var db *gorm.DB
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		db, err = gorm.Open(mysql.Open(cfg.MySQLDSN), &gorm.Config{})
 		if err == nil {
 			break
@@ -73,8 +73,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Регистрируем обработчики API
-	mux.Handle("/api/schedules", scheduleHandler)
-mux.Handle("/api/inventory", inventoryHandler)
+	mux.Handle("/schedules", scheduleHandler)
+	mux.Handle("/inventory", inventoryHandler)
 
 	// Добавляем Swagger UI
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)

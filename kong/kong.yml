@@ -1,0 +1,32 @@
+_format_version: '3.0'
+
+services:
+  - name: auth-service
+    url: http://auth_backend:3000
+    routes:
+      - name: auth-route
+        paths: ['/auth']
+        strip_path: true
+
+  - name: management-service
+    url: http://clinic_management_backend:8080
+    routes:
+      - name: management-route
+        paths: ['/management']
+        strip_path: true
+
+  - name: frontend-service
+    url: http://frontend:80
+    routes:
+      - name: frontend-route
+        paths: ['/']
+
+plugins:
+  - name: cors
+    config:
+      origins: ['*']
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+      headers: ['Accept', 'Authorization', 'Content-Type']
+      exposed_headers: ['x-auth-token']
+      credentials: true
+      max_age: 3600
