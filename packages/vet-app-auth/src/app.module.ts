@@ -7,6 +7,9 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { Clinic } from './clinics/clinic.entity';
 import { ConfigModule } from '@nestjs/config';
+import { DoctorsModule } from './doctors/doctors.module';
+import { Doctor } from './doctors/doctors.entity';
+import { ClinicsModule } from './clinics/clinic.module';
 
 @Module({
   imports: [
@@ -20,12 +23,14 @@ import { ConfigModule } from '@nestjs/config';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Clinic],
+      entities: [User, Clinic, Doctor],
       synchronize: true,
     }),
     AuthModule,
     UsersModule,
+    ClinicsModule,
     PassportModule,
+    DoctorsModule,
   ],
 })
 export class AppModule {}

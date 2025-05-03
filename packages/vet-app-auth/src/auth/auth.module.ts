@@ -9,19 +9,27 @@ import { ClinicService } from 'src/clinics/clinic.service';
 import { LocalStrategy } from './local.strategy';
 import { UserService } from 'src/users/users.service';
 import { ConfigModule } from '@nestjs/config';
+import { DoctorService } from 'src/doctors/doctors.service';
+import { Doctor } from 'src/doctors/doctors.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // чтобы доступ был везде через process.env
     }),
-    TypeOrmModule.forFeature([User, Clinic]),
+    TypeOrmModule.forFeature([User, Clinic, Doctor]),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '24h' },
     }),
   ],
-  providers: [AuthService, UserService, ClinicService, LocalStrategy],
+  providers: [
+    AuthService,
+    UserService,
+    ClinicService,
+    DoctorService,
+    LocalStrategy,
+  ],
   controllers: [AuthController],
   exports: [AuthService],
 })

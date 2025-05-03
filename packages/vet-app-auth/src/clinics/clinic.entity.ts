@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Doctor } from 'src/doctors/doctors.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 @Entity()
 export class Clinic {
@@ -19,4 +20,7 @@ export class Clinic {
 
   @Column({ nullable: true })
   photo?: string;
+
+  @OneToMany(() => Doctor, (doctor) => doctor.clinic)
+  doctors: Doctor[];
 }

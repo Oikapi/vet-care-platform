@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"clinic-management-service/internal/service"
+	"vet-app-clinic-management/internal/service"
 	"github.com/gorilla/mux"
 )
 

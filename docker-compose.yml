@@ -52,6 +52,41 @@ services:
     environment:
       - MYSQL_DSN=root:password@tcp(mysql:3306)/clinic_db?charset=utf8mb4&parseTime=True&loc=Local
       - REDIS_ADDR=redis:6379
+  appointments_backend:
+    build:
+      context: ./packages/vet-app-appointments
+      dockerfile: Dockerfile
+    container_name: appointments_backend
+    ports:
+      - "3004:8280" 
+    depends_on:
+       mysql:
+        condition: service_healthy
+       redis:
+        condition: service_started
+    environment:
+      - REDIS_DB=0
+      - REDIS_ADDR=redis:6379
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=vetcare_appointments
+      - TELEGRAM_BOT_TOKEN=8112341528:AAGT5fjrSaO5W6izu-N-pfw_orpqRWcoAnU 
+      - PORT=8280
+
+  pets:
+    build: ./packages/vet-app-pet
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "3003:5000"
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: pet_profiles
 
   # Сервис для MySQL
   mysql:
@@ -64,7 +99,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./packages/vet-app-clinic-management/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
@@ -122,6 +157,7 @@ services:
       - "5173:80"
     environment:
       REACT_APP_API_URL: http://localhost:3000
+      VITE_API_URL : http://kong:8000
     depends_on:
       - kong
     volumes:

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"clinic-management-service/internal/service"
+	"vet-app-clinic-management/internal/service"
 )
 
 type InventoryHandler struct {

@@ -1,8 +1,8 @@
 package service
 
 import (
-    "clinic-management-service/internal/models"
-    "clinic-management-service/internal/repository/mySQL"
+    "vet-app-clinic-management/internal/models"
+    "vet-app-clinic-management/internal/repository/mySQL"
 )
 
 type ScheduleService struct {

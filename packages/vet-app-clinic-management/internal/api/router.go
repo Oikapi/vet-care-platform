@@ -1,7 +1,7 @@
 package api
 
 import (
-    "clinic-management-service/internal/api/handlers"
+    "vet-app-clinic-management/internal/api/handlers"
     "github.com/gorilla/mux"
 )
 

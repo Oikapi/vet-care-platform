@@ -15,8 +15,3 @@ COPY . .
 
 # Команда для запуска приложения
 CMD ["python", "app.py"]
-
-COPY wait-for-mysql.sh /app/wait-for-mysql.sh
-RUN chmod +x /app/wait-for-mysql.sh
-
-CMD ["/app/wait-for-mysql.sh"]

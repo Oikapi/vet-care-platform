@@ -1,4 +1,4 @@
-module clinic-management-service
+module vet-app-clinic-management
 
 go 1.24.2
 

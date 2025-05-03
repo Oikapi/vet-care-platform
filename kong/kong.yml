@@ -7,6 +7,12 @@ services:
       - name: auth-route
         paths: ['/auth']
         strip_path: true
+  - name: appointment-service
+    url: http://appointments_backend:8280
+    routes:
+      - name: appointments-route
+        paths: ['/appointment']
+        strip_path: true
 
   - name: management-service
     url: http://clinic_management_backend:8080

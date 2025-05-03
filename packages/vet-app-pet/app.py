@@ -1,17 +1,17 @@
 from flask import Flask, request, jsonify
 import mysql.connector
 from mysql.connector import Error
-
+import os
 app = Flask(__name__)
 
 # Подключение к базе данных
 def get_db_connection():
     try:
         connection = mysql.connector.connect(
-            host="localhost",            # Имя сервиса MySQL из docker-compose.yml
-            user="user",             # Имя пользователя
-            password="password",     # Пароль пользователя
-            database="pet_profiles"  # Имя базы данных
+            host=os.environ.get("DB_HOST", "localhost"),
+            user=os.environ.get("DB_USER", "user"),
+            password=os.environ.get("DB_PASSWORD", "password"),
+            database=os.environ.get("DB_NAME", "pet_profiles")
         )
         if connection.is_connected():
             print("Successfully connected to the database")

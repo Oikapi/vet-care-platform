@@ -1,7 +1,7 @@
 package mySQL
 
 import (
-    "clinic-management-service/internal/models"
+    "vet-app-clinic-management/internal/models"
     "gorm.io/gorm"
 )
 

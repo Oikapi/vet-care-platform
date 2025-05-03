@@ -3,9 +3,9 @@ package service
 import (
     "context"
     "encoding/json" // Добавляем импорт
-    "clinic-management-service/internal/models"
-    "clinic-management-service/internal/repository/mySQL"
-    "clinic-management-service/internal/repository/redis"
+    "vet-app-clinic-management/internal/models"
+    "vet-app-clinic-management/internal/repository/mySQL"
+    "vet-app-clinic-management/internal/repository/redis"
 )
 
 type InventoryService struct {

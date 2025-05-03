@@ -9,11 +9,16 @@ import RegisterPage from '../pages/RegisterPage';
 import App from '../App';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginPage from '../pages/LoginPage';
+import DashboardPage from '../pages/DashboardPage';
 // import LoginPage from './pages/LoginPage';
 // import HomePage from './pages/HomePage';
 // import ErrorPage from './pages/ErrorPage';
 
 export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <DashboardPage />,
+  },
   {
     path: '/',
     element: <App />,

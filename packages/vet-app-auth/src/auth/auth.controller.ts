@@ -6,19 +6,22 @@ import { UserService } from 'src/users/users.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { CreateClinicDto } from 'src/clinics/dto/create-clinic.dto';
 import { LocalAuthGuard } from 'src/guards/local-auth.guard';
+import { CreateDoctorDto } from 'src/doctors/dto/create-doctor-dto';
+import { DoctorService } from 'src/doctors/doctors.service';
 
 @Controller()
 export class AuthController {
   constructor(
     private authService: AuthService,
     private userService: UserService,
-    private clinicService: ClinicService
+    private clinicService: ClinicService,
+    private doctorService: DoctorService
   ) {}
 
   @Post('login')
   @UseGuards(LocalAuthGuard)
   async login(@Request() req) {
-    console.log('auth')
+    console.log('auth');
     return this.authService.login(req.user);
   }
 
@@ -30,5 +33,10 @@ export class AuthController {
   @Post('register/clinic')
   async registerClinic(@Body() createClinicDto: CreateClinicDto) {
     return this.clinicService.create(createClinicDto);
+  }
+
+  @Post('register/doctor')
+  async registerDoctor(@Body() createDoctorDto: CreateDoctorDto) {
+    return this.doctorService.create(createDoctorDto);
   }
 }
