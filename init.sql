@@ -111,3 +111,6 @@ VALUES
   ('Анна', 'Иванова', 'Терапевт', 1),
   ('Борис', 'Смирнов', 'Хирург', 1),
   ('Вера', 'Кузнецова', 'Кардиолог', 2);
+
+CREATE DATABASE IF NOT EXISTS forum_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE clinic_db;
