@@ -31,7 +31,7 @@ func (r *ScheduleRepo) GetAll() ([]*models.Schedule, error) {
 
 func (r *ScheduleRepo) GetByID(id int) (*models.Schedule, error) {
     var schedule models.Schedule
-    if err := r.db.First(&schedule, id).Error; err != nil {
+    if err := r.db.Preload("Doctor").First(&schedule, id).Error; err != nil {
         return nil, err
     }
     return &schedule, nil

@@ -7,6 +7,7 @@ import (
     "net/http"
     "strconv"
     "github.com/gin-gonic/gin"
+    "log"
 )
 
 // ScheduleHandler обрабатывает HTTP-запросы для расписаний
@@ -32,25 +33,33 @@ func NewScheduleHandler(svc *service.ScheduleService) *ScheduleHandler {
 // @Router /schedules/doctor/:doctorID [get]
 
 func (h *ScheduleHandler) GetAll(c *gin.Context) {
+    log.Println("Received request to get all schedules")
     schedules, err := h.svc.GetAll()
     if err != nil {
+        log.Println("Failed to get all schedules:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
+    log.Printf("Retrieved %d schedules", len(schedules))
     c.JSON(http.StatusOK, schedules)
 }
 
 func (h *ScheduleHandler) GetByDoctorID(c *gin.Context) {
-    doctorID, err := strconv.Atoi(c.Param("doctorID"))
+    log.Println("Received request to get schedules by doctor ID")
+    doctorID := c.Param("doctorID")
+    id, err := strconv.Atoi(doctorID)
     if err != nil {
+        log.Println("Invalid doctor ID:", err)
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid doctor ID"})
         return
     }
-    schedules, err := h.svc.GetByDoctorID(doctorID)
+    schedules, err := h.svc.GetByDoctorID(id)
     if err != nil {
+        log.Println("Failed to get schedules by doctor ID:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
+    log.Printf("Retrieved %d schedules for doctor ID %d", len(schedules), id)
     c.JSON(http.StatusOK, schedules)
 }
 

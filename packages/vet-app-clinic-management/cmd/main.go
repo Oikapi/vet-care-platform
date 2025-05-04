@@ -79,9 +79,6 @@ func main() {
 
     // Настройка роутера с gin
     router := api.SetupRouter(scheduleHandler, inventoryHandler, doctorHandler)
-    if err := router.Run(":3002"); err != nil {
-        log.Fatal("Failed to start server:", err)
-    }
 
     // Добавляем Swagger UI
     router.GET("/swagger/*any", gin.WrapH(httpSwagger.WrapHandler))
