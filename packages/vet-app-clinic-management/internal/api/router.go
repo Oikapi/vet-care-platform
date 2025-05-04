@@ -5,8 +5,7 @@ import (
     "github.com/gin-gonic/gin"
 )
 
-// SetupRouter настраивает маршруты для API.
-func SetupRouter(scheduleHandler *handlers.ScheduleHandler, inventoryHandler *handlers.InventoryHandler) *gin.Engine {
+func SetupRouter(scheduleHandler *handlers.ScheduleHandler, inventoryHandler *handlers.InventoryHandler, doctorHandler *handlers.DoctorHandler) *gin.Engine {
     router := gin.Default()
 
     apiGroup := router.Group("/management")
@@ -25,6 +24,11 @@ func SetupRouter(scheduleHandler *handlers.ScheduleHandler, inventoryHandler *ha
         apiGroup.POST("/inventory", inventoryHandler.Create)
         apiGroup.DELETE("/inventory/:medicineID", inventoryHandler.Delete)
         apiGroup.PUT("/inventory/:medicineID/quantity", inventoryHandler.UpdateQuantity)
+
+        // Маршруты для врачей
+        apiGroup.POST("/auth/doctor", doctorHandler.AuthenticateDoctor)
+        apiGroup.GET("/doctors", doctorHandler.GetAll)
+        apiGroup.PUT("/doctors/:doctorID", doctorHandler.Update)
     }
     return router
 }

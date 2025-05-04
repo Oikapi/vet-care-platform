@@ -61,10 +61,13 @@ func main() {
     // Инициализация сервисов и обработчиков
     scheduleRepo := mySQL.NewScheduleRepo(db)
     inventoryRepo := mySQL.NewInventoryRepo(db)
-    scheduleSvc := service.NewScheduleService(scheduleRepo)
+    doctorRepo := mySQL.NewDoctorRepo(db)
+    scheduleSvc := service.NewScheduleService(scheduleRepo, doctorRepo)
     inventorySvc := service.NewInventoryService(inventoryRepo, cache)
+    doctorSvc := service.NewDoctorService(doctorRepo)
     scheduleHandler := handlers.NewScheduleHandler(scheduleSvc)
     inventoryHandler := handlers.NewInventoryHandler(inventorySvc)
+    doctorHandler := handlers.NewDoctorHandler(doctorSvc)
 
     // Настройка Swagger
     docs.SwaggerInfo.Title = "Clinic Management API"
@@ -75,7 +78,10 @@ func main() {
     docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
     // Настройка роутера с gin
-    router := api.SetupRouter(scheduleHandler, inventoryHandler)
+    router := api.SetupRouter(scheduleHandler, inventoryHandler, doctorHandler)
+    if err := router.Run(":3002"); err != nil {
+        log.Fatal("Failed to start server:", err)
+    }
 
     // Добавляем Swagger UI
     router.GET("/swagger/*any", gin.WrapH(httpSwagger.WrapHandler))

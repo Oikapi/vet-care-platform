@@ -13,15 +13,17 @@ func NewScheduleRepo(db *gorm.DB) *ScheduleRepo {
     return &ScheduleRepo{db: db}
 }
 
-func (r *ScheduleRepo) GetByDoctorID(doctorID int) ([]models.Schedule, error) {
-    var schedules []models.Schedule
-    err := r.db.Where("doctor_id = ?", doctorID).Find(&schedules).Error
-    return schedules, err
+func (r *ScheduleRepo) GetByDoctorID(doctorID int) ([]*models.Schedule, error) {
+    var schedules []*models.Schedule
+    if err := r.db.Preload("Doctor").Where("doctor_id = ?", doctorID).Find(&schedules).Error; err != nil {
+        return nil, err
+    }
+    return schedules, nil
 }
 
 func (r *ScheduleRepo) GetAll() ([]*models.Schedule, error) {
     var schedules []*models.Schedule
-    if err := r.db.Find(&schedules).Error; err != nil {
+    if err := r.db.Preload("Doctor").Find(&schedules).Error; err != nil {
         return nil, err
     }
     return schedules, nil

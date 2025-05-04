@@ -60,6 +60,12 @@ func (h *ScheduleHandler) Create(c *gin.Context) {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
         return
     }
+
+    if _, err := h.svc.GetDoctorByID(req.DoctorID); err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Doctor not found"})
+        return
+    }
+
     schedule := &models.Schedule{
         DoctorID:  req.DoctorID,
         StartTime: req.StartTime,
