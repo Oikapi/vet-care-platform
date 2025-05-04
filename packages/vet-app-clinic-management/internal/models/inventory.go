@@ -1,8 +1,8 @@
 package models
 
 type Inventory struct {
-    ID           uint   `gorm:"primaryKey"`
-    MedicineName string `gorm:"not null"`
-    Quantity     int    `gorm:"not null"`
-    Threshold    int    `gorm:"not null"` // Порог для автозаказа
+    ID           int    `json:"id" gorm:"primaryKey"`
+    MedicineName string `json:"medicine_name"`
+    Quantity     int    `json:"quantity"`
+    Threshold    int    `json:"threshold"`
 }

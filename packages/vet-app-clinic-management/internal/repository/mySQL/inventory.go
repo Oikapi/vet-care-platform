@@ -1,6 +1,7 @@
 package mySQL
 
 import (
+    "context"
     "vet-app-clinic-management/internal/models"
     "gorm.io/gorm"
 )
@@ -13,12 +14,28 @@ func NewInventoryRepo(db *gorm.DB) *InventoryRepo {
     return &InventoryRepo{db: db}
 }
 
-func (r *InventoryRepo) GetAll() ([]models.Inventory, error) {
+func (r *InventoryRepo) GetAll(ctx context.Context) ([]models.Inventory, error) {
     var inventory []models.Inventory
     err := r.db.Find(&inventory).Error
     return inventory, err
 }
 
-func (r *InventoryRepo) UpdateQuantity(id uint, quantity int) error {
-    return r.db.Model(&models.Inventory{}).Where("id = ?", id).Update("quantity", quantity).Error
+func (r *InventoryRepo) GetByID(id int) (*models.Inventory, error) {
+    var inventory models.Inventory
+    if err := r.db.First(&inventory, id).Error; err != nil {
+        return nil, err
+    }
+    return &inventory, nil
+}
+
+func (r *InventoryRepo) Update(inventory *models.Inventory) error {
+    return r.db.Save(inventory).Error
+}
+
+func (r *InventoryRepo) Create(inventory *models.Inventory) error {
+    return r.db.Create(inventory).Error
+}
+
+func (r *InventoryRepo) Delete(medicineID int) error {
+    return r.db.Delete(&models.Inventory{}, medicineID).Error
 }
