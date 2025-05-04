@@ -8,6 +8,7 @@ import (
     "vet-app-clinic-management/internal/repository/redis"
     "strconv"
     "fmt"
+    "time"
 )
 
 type InventoryService struct {
@@ -100,16 +101,45 @@ func (s *InventoryService) AutoOrder(ctx context.Context) error {
     ordered := false
     for _, item := range inventory {
         if item.Quantity < item.Threshold {
-            // Здесь можно добавить логику реального заказа
+            orderQty := item.Threshold - item.Quantity
+            if orderQty <= 0 {
+                orderQty = item.Threshold
+            }
+
+            // Симуляция заказа
+            orderID := fmt.Sprintf("order_%s_%d", item.MedicineName, time.Now().UnixNano())
+            orderData := map[string]interface{}{
+                "medicine_id": item.ID,
+                "name":        item.MedicineName,
+                "quantity":    orderQty,
+                "status":      "pending",
+                "ordered_at":  time.Now().Format(time.RFC3339),
+            }
+
             if s.cache != nil {
-                if err := s.cache.Set(ctx, "order_"+item.MedicineName, "ordered"); err != nil {
+                orderJSON, err := json.Marshal(orderData)
+                if err != nil {
+                    return err
+                }
+                if err := s.cache.Set(ctx, orderID, string(orderJSON)); err != nil {
+                    return err
+                }
+                if err := s.cache.Set(ctx, "order_"+item.MedicineName, orderID); err != nil {
                     return err
                 }
             }
+            
+            updatedItem, err := s.UpdateQuantity(ctx, item.ID, item.Quantity+orderQty)
+            if err != nil {
+                return fmt.Errorf("failed to update inventory after auto-order: %v", err)
+            }
+            // Симуляция уведомления
+            fmt.Printf("Auto-order initiated for %s (ID: %d), quantity: %d, orderID: %s, new quantity: %d\n",
+                item.MedicineName, item.ID, orderQty, orderID, updatedItem.Quantity)
+
             ordered = true
         }
     }
-
     if ordered {
         // Инвалидация кэша после заказа
         if s.cache != nil {
@@ -118,7 +148,6 @@ func (s *InventoryService) AutoOrder(ctx context.Context) error {
             }
         }
     }
-
     return nil
 }
 
