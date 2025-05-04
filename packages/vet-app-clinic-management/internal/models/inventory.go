@@ -5,4 +5,5 @@ type Inventory struct {
     MedicineName string `json:"medicine_name"`
     Quantity     int    `json:"quantity"`
     Threshold    int    `json:"threshold"`
+    ClinicID  int       `gorm:"not null"`
 }

@@ -4,6 +4,7 @@ USE clinic_db;
 CREATE TABLE schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     doctor_id INT NOT NULL,
+    clinic_id INT NOT NULL,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL
 );
@@ -12,16 +13,30 @@ CREATE TABLE inventories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     medicine_name VARCHAR(255) NOT NULL,
     quantity INT NOT NULL,
-    threshold INT NOT NULL
+    threshold INT NOT NULL,
+    clinic_id INT NOT NULL
 );
 
-INSERT INTO schedules (doctor_id, start_time, end_time) VALUES
-(1, '2025-04-30 09:00:00', '2025-04-30 10:00:00'),
-(1, '2025-04-30 10:00:00', '2025-04-30 11:00:00');
+CREATE TABLE doctors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    clinic_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
-INSERT INTO inventories (medicine_name, quantity, threshold) VALUES
-('Paracetamol', 50, 20),
-('Antibiotic', 10, 15);
+INSERT INTO schedules (doctor_id, clinic_id, start_time, end_time) VALUES
+(1, 1,'2025-04-30 09:00:00', '2025-04-30 10:00:00'),
+(1, 1,'2025-04-30 10:00:00', '2025-04-30 11:00:00');
+
+INSERT INTO inventories (medicine_name, quantity, threshold, clinic_id) VALUES
+('Paracetamol', 50, 20, 1),
+('Antibiotic', 10, 15, 1);
+
+INSERT INTO doctors (name, email, clinic_id) VALUES
+('Dr.Andre','andre@example.com', 1),
+('Dr.Williams','williams@example.com', 1);
 
 CREATE DATABASE IF NOT EXISTS pet_profiles;
 USE pet_profiles;
@@ -76,7 +91,7 @@ VALUES
   (1, NOW(), NOW(), NULL, 201, 101, 301, 2, 'confirmed', '123456789'),
   (2, NOW(), NOW(), NULL, 202, 103, 301, 4, 'confirmed', '987654321');
 
-
+CREATE DATABASE IF NOT EXISTS auth_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE auth_db;
 
 CREATE TABLE IF NOT EXISTS clinic (
@@ -113,4 +128,4 @@ VALUES
   ('Вера', 'Кузнецова', 'Кардиолог', 2);
 
 CREATE DATABASE IF NOT EXISTS forum_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE clinic_db;
+USE forum_db;

@@ -11,24 +11,24 @@ func SetupRouter(scheduleHandler *handlers.ScheduleHandler, inventoryHandler *ha
     apiGroup := router.Group("/management")
     {
         // Маршруты для расписаний
-        apiGroup.GET("/schedules/doctor", scheduleHandler.GetAll)
-        apiGroup.GET("/schedules/doctor/:doctorID", scheduleHandler.GetByDoctorID)
-        apiGroup.POST("/schedules", scheduleHandler.Create)
-        apiGroup.PUT("/schedules/:scheduleID", scheduleHandler.Update)
-        apiGroup.DELETE("/schedules/:scheduleID", scheduleHandler.Delete)
+        apiGroup.GET(":clinicID/schedules/doctor", scheduleHandler.GetAll)
+        apiGroup.GET(":clinicID/schedules/doctor/:doctorID", scheduleHandler.GetByDoctorID)
+        apiGroup.POST(":clinicID/schedules", scheduleHandler.Create)
+        apiGroup.PUT(":clinicID/schedules/:scheduleID", scheduleHandler.Update)
+        apiGroup.DELETE(":clinicID/schedules/:scheduleID", scheduleHandler.Delete)
 
         // Маршруты для инвентаря
-        apiGroup.GET("/inventory", inventoryHandler.GetAll)
-        apiGroup.GET("/inventory/:medicineID", inventoryHandler.GetByID)
-        apiGroup.POST("/inventory/autoorder", inventoryHandler.AutoOrder)
-        apiGroup.POST("/inventory", inventoryHandler.Create)
-        apiGroup.DELETE("/inventory/:medicineID", inventoryHandler.Delete)
-        apiGroup.PUT("/inventory/:medicineID/quantity", inventoryHandler.UpdateQuantity)
+        apiGroup.GET(":clinicID/inventory", inventoryHandler.GetAll)
+        apiGroup.GET(":clinicID/inventory/:medicineID", inventoryHandler.GetByID)
+        apiGroup.POST(":clinicID/inventory/autoorder", inventoryHandler.AutoOrder)
+        apiGroup.POST(":clinicID/inventory", inventoryHandler.Create)
+        apiGroup.DELETE(":clinicID/inventory/:medicineID", inventoryHandler.Delete)
+        apiGroup.PUT(":clinicID/inventory/:medicineID/quantity", inventoryHandler.UpdateQuantity)
 
         // Маршруты для врачей
-        apiGroup.POST("/auth/doctor", doctorHandler.AuthenticateDoctor)
-        apiGroup.GET("/doctors", doctorHandler.GetAll)
-        apiGroup.PUT("/doctors/:doctorID", doctorHandler.Update)
+        apiGroup.POST(":clinicID/auth/doctor", doctorHandler.AuthenticateDoctor)
+        apiGroup.GET(":clinicID/doctors", doctorHandler.GetAll)
+        apiGroup.PUT(":clinicID/doctors/:doctorID", doctorHandler.Update)
     }
     return router
 }

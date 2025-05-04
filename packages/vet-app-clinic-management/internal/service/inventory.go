@@ -6,9 +6,9 @@ import (
     "vet-app-clinic-management/internal/models"
     "vet-app-clinic-management/internal/repository/mySQL"
     "vet-app-clinic-management/internal/repository/redis"
-    "strconv"
     "fmt"
     "time"
+    "log"
 )
 
 type InventoryService struct {
@@ -20,18 +20,20 @@ func NewInventoryService(repo *mySQL.InventoryRepo, cache *redis.InventoryCache)
     return &InventoryService{repo: repo, cache: cache}
 }
 
-func (s *InventoryService) GetAll(ctx context.Context) ([]models.Inventory, error) {
+func (s *InventoryService) GetAll(ctx context.Context, clinicID int) ([]*models.Inventory, error) {
     // Проверяем кэш
+    cacheKey := fmt.Sprintf("inventory_clinic_%d", clinicID)
     if s.cache != nil {
-        data, err := s.cache.Get(ctx, "inventory")
+        data, err := s.cache.Get(ctx, cacheKey)
         if err == nil && data != nil {
             dataStr, ok := data.(string)
             if !ok {
                 return nil, fmt.Errorf("cached data is not a string")
             }
             if dataStr != "" {
-                var inventory []models.Inventory
+                var inventory []*models.Inventory
                 if err := json.Unmarshal([]byte(dataStr), &inventory); err == nil {
+                    log.Printf("Fetched %d inventory items from cache for clinic ID %d", len(inventory), clinicID)
                     return inventory, nil
                 }
             }
@@ -39,8 +41,9 @@ func (s *InventoryService) GetAll(ctx context.Context) ([]models.Inventory, erro
     }
 
     // Если кэша нет, запрашиваем из MySQL
-    inventory, err := s.repo.GetAll(ctx)
+    inventory, err := s.repo.GetAll(clinicID)
     if err != nil {
+        log.Println("Failed to fetch all inventory:", err)
         return nil, err
     }
 
@@ -48,34 +51,40 @@ func (s *InventoryService) GetAll(ctx context.Context) ([]models.Inventory, erro
     if s.cache != nil {
         inventoryBytes, err := json.Marshal(inventory)
         if err == nil {
-            if err := s.cache.Set(ctx, "inventory", string(inventoryBytes)); err != nil {
-                return nil, err
+            if err := s.cache.Set(ctx, cacheKey, string(inventoryBytes)); err != nil {
+                log.Println("Failed to set cache for inventory:", err)
             }
         }
     }
 
+    log.Printf("Fetched %d inventory items for clinic ID %d", len(inventory), clinicID)
     return inventory, nil
 }
 
-func (s *InventoryService) GetByID(ctx context.Context, medicineID int) (*models.Inventory, error) {
+func (s *InventoryService) GetByID(ctx context.Context, clinicID, id int) (*models.Inventory, error) {
     // Проверяем кэш
+    cacheKey := fmt.Sprintf("inventory_%d_clinic_%d", id, clinicID)
     if s.cache != nil {
-        data, err := s.cache.Get(ctx, strconv.Itoa(medicineID))
-        if err == nil && data != "" {
+        data, err := s.cache.Get(ctx, cacheKey)
+        if err == nil && data != nil {
             dataStr, ok := data.(string)
             if !ok {
                 return nil, fmt.Errorf("cached data is not a string")
             }
-            var inventory models.Inventory
-            if err := json.Unmarshal([]byte(dataStr), &inventory); err == nil {
-                return &inventory, nil
+            if dataStr != "" {
+                var inventory models.Inventory
+                if err := json.Unmarshal([]byte(dataStr), &inventory); err == nil {
+                    log.Printf("Fetched inventory item ID %d from cache for clinic ID %d", id, clinicID)
+                    return &inventory, nil
+                }
             }
         }
     }
 
     // Если кэша нет, запрашиваем из базы
-    inventory, err := s.repo.GetByID(medicineID)
+    inventory, err := s.repo.GetByID(clinicID, id)
     if err != nil {
+        log.Println("Failed to fetch inventory by ID:", err)
         return nil, err
     }
 
@@ -83,18 +92,20 @@ func (s *InventoryService) GetByID(ctx context.Context, medicineID int) (*models
     if s.cache != nil {
         inventoryBytes, err := json.Marshal(inventory)
         if err == nil {
-            if err := s.cache.Set(ctx, strconv.Itoa(medicineID), string(inventoryBytes)); err != nil {
-                return nil, err
+            if err := s.cache.Set(ctx, cacheKey, string(inventoryBytes)); err != nil {
+                log.Println("Failed to set cache for inventory item:", err)
             }
         }
     }
 
+    log.Printf("Fetched inventory item ID %d for clinic ID %d", id, clinicID)
     return inventory, nil
 }
 
-func (s *InventoryService) AutoOrder(ctx context.Context) error {
-    inventory, err := s.GetAll(ctx)
+func (s *InventoryService) AutoOrder(ctx context.Context, clinicID int) error {
+    inventory, err := s.GetAll(ctx, clinicID)
     if err != nil {
+        log.Println("Failed to fetch inventory for auto-order:", err)
         return err
     }
 
@@ -119,18 +130,22 @@ func (s *InventoryService) AutoOrder(ctx context.Context) error {
             if s.cache != nil {
                 orderJSON, err := json.Marshal(orderData)
                 if err != nil {
+                    log.Println("Failed to marshal order data:", err)
                     return err
                 }
                 if err := s.cache.Set(ctx, orderID, string(orderJSON)); err != nil {
+                    log.Println("Failed to set cache for order:", err)
                     return err
                 }
                 if err := s.cache.Set(ctx, "order_"+item.MedicineName, orderID); err != nil {
+                    log.Println("Failed to set cache for order reference:", err)
                     return err
                 }
             }
-            
-            updatedItem, err := s.UpdateQuantity(ctx, item.ID, item.Quantity+orderQty)
+
+            updatedItem, err := s.UpdateQuantity(ctx, clinicID, item.ID, item.Quantity+orderQty)
             if err != nil {
+                log.Println("Failed to update inventory after auto-order:", err)
                 return fmt.Errorf("failed to update inventory after auto-order: %v", err)
             }
             // Симуляция уведомления
@@ -143,7 +158,9 @@ func (s *InventoryService) AutoOrder(ctx context.Context) error {
     if ordered {
         // Инвалидация кэша после заказа
         if s.cache != nil {
-            if err := s.cache.Del(ctx, "inventory"); err != nil {
+            cacheKey := fmt.Sprintf("inventory_clinic_%d", clinicID)
+            if err := s.cache.Del(ctx, cacheKey); err != nil {
+                log.Println("Failed to invalidate cache after auto-order:", err)
                 return err
             }
         }
@@ -151,57 +168,115 @@ func (s *InventoryService) AutoOrder(ctx context.Context) error {
     return nil
 }
 
-func (s *InventoryService) UpdateQuantity(ctx context.Context, medicineID, quantity int) (*models.Inventory, error) {
-    inventory, err := s.repo.GetByID(medicineID)
+func (s *InventoryService) UpdateQuantity(ctx context.Context, clinicID, medicineID, quantity int) (*models.Inventory, error) {
+    inventory, err := s.repo.GetByID(clinicID, medicineID)
     if err != nil {
+        log.Println("Failed to fetch inventory for update quantity:", err)
         return nil, err
     }
     inventory.Quantity = quantity
     if err := s.repo.Update(inventory); err != nil {
+        log.Println("Failed to update inventory quantity:", err)
         return nil, err
     }
 
     if s.cache != nil {
+        cacheKey := fmt.Sprintf("inventory_%d_clinic_%d", medicineID, clinicID)
         inventoryBytes, err := json.Marshal(inventory)
         if err == nil {
-            if err := s.cache.Set(ctx, strconv.Itoa(medicineID), string(inventoryBytes)); err != nil {
-                return nil, err
+            if err := s.cache.Set(ctx, cacheKey, string(inventoryBytes)); err != nil {
+                log.Println("Failed to set cache for updated inventory item:", err)
             }
             // Инвалидация общего кэша
-            if err := s.cache.Del(ctx, "inventory"); err != nil {
-                return nil, err
+            cacheKeyAll := fmt.Sprintf("inventory_clinic_%d", clinicID)
+            if err := s.cache.Del(ctx, cacheKeyAll); err != nil {
+                log.Println("Failed to invalidate general cache after update:", err)
             }
         }
     }
 
+    log.Printf("Updated inventory quantity for item ID %d in clinic ID %d", medicineID, clinicID)
     return inventory, nil
 }
 
-func (s *InventoryService) Create(ctx context.Context, inventory *models.Inventory) error {
-    if err := s.repo.Create(inventory); err != nil {
-        return err
+func (s *InventoryService) Create(ctx context.Context, clinicID int, medicineName string, quantity, threshold int) (*models.Inventory, error) {
+    log.Printf("Creating inventory: medicine_name=%s for clinic ID %d", medicineName, clinicID)
+    inventory := &models.Inventory{
+        MedicineName: medicineName,
+        Quantity:     quantity,
+        Threshold:    threshold,
+        ClinicID:     clinicID,
     }
-    // Инвалидация кэша
+    if err := s.repo.Create(inventory); err != nil {
+        log.Println("Failed to create inventory:", err)
+        return nil, err
+    }
+
+    // Инвалидация общего кэша
     if s.cache != nil {
-        if err := s.cache.Del(ctx, "inventory"); err != nil {
-            return err
+        cacheKey := fmt.Sprintf("inventory_clinic_%d", clinicID)
+        if err := s.cache.Del(ctx, cacheKey); err != nil {
+            log.Println("Failed to invalidate cache after create:", err)
         }
     }
-    return nil
+
+    log.Printf("Inventory created successfully: ID=%d", inventory.ID)
+    return inventory, nil
 }
 
-func (s *InventoryService) Delete(ctx context.Context, medicineID int) error {
-    if err := s.repo.Delete(medicineID); err != nil {
+func (s *InventoryService) Update(ctx context.Context, clinicID, id int, medicineName string, quantity, threshold int) (*models.Inventory, error) {
+    log.Printf("Updating inventory with ID: %d for clinic ID %d", id, clinicID)
+    inventory, err := s.repo.GetByID(clinicID, id)
+    if err != nil {
+        log.Println("Failed to fetch inventory for update:", err)
+        return nil, err
+    }
+    inventory.MedicineName = medicineName
+    inventory.Quantity = quantity
+    inventory.Threshold = threshold
+    if err := s.repo.Update(inventory); err != nil {
+        log.Println("Failed to update inventory:", err)
+        return nil, err
+    }
+
+    if s.cache != nil {
+        cacheKey := fmt.Sprintf("inventory_%d_clinic_%d", id, clinicID)
+        inventoryBytes, err := json.Marshal(inventory)
+        if err == nil {
+            if err := s.cache.Set(ctx, cacheKey, string(inventoryBytes)); err != nil {
+                log.Println("Failed to set cache for updated inventory item:", err)
+            }
+            // Инвалидация общего кэша
+            cacheKeyAll := fmt.Sprintf("inventory_clinic_%d", clinicID)
+            if err := s.cache.Del(ctx, cacheKeyAll); err != nil {
+                log.Println("Failed to invalidate general cache after update:", err)
+            }
+        }
+    }
+
+    log.Printf("Inventory updated successfully: ID=%d", inventory.ID)
+    return inventory, nil
+}
+
+func (s *InventoryService) Delete(ctx context.Context, clinicID, id int) error {
+    log.Printf("Deleting inventory with ID: %d for clinic ID %d", id, clinicID)
+    if err := s.repo.Delete(clinicID, id); err != nil {
+        log.Println("Failed to delete inventory:", err)
         return err
     }
+
     // Инвалидация кэша
     if s.cache != nil {
-        if err := s.cache.Del(ctx, strconv.Itoa(medicineID)); err != nil {
-            return err
+        cacheKey := fmt.Sprintf("inventory_%d_clinic_%d", id, clinicID)
+        if err := s.cache.Del(ctx, cacheKey); err != nil {
+            log.Println("Failed to delete cache for inventory item:", err)
         }
-        if err := s.cache.Del(ctx, "inventory"); err != nil {
-            return err
+        cacheKeyAll := fmt.Sprintf("inventory_clinic_%d", clinicID)
+        if err := s.cache.Del(ctx, cacheKeyAll); err != nil {
+            log.Println("Failed to delete general cache after delete:", err)
         }
     }
+
+    log.Printf("Inventory deleted successfully: ID=%d", id)
     return nil
 }

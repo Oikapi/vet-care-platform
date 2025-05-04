@@ -4,7 +4,8 @@ import (
     "net/http"
     "vet-app-clinic-management/internal/service"
     "github.com/gin-gonic/gin"
-	"strconv"
+    "strconv"
+    "log"
 )
 
 type DoctorHandler struct {
@@ -16,6 +17,14 @@ func NewDoctorHandler(svc *service.DoctorService) *DoctorHandler {
 }
 
 func (h *DoctorHandler) AuthenticateDoctor(c *gin.Context) {
+    log.Println("Received request to authenticate doctor")
+    clinicID := c.Param("clinicID")
+    clinicIDInt, err := strconv.Atoi(clinicID)
+    if err != nil {
+        log.Println("Invalid clinic ID:", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid clinic ID"})
+        return
+    }
     var req struct {
         Name  string `json:"name" binding:"required"`
         Email string `json:"email" binding:"required,email"`
@@ -25,8 +34,9 @@ func (h *DoctorHandler) AuthenticateDoctor(c *gin.Context) {
         return
     }
 
-    doctor, err := h.svc.CreateOrGet(req.Name, req.Email)
+    doctor, err := h.svc.CreateOrGet(clinicIDInt, req.Name, req.Email)
     if err != nil {
+        log.Println("Failed to authenticate doctor:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
@@ -35,8 +45,17 @@ func (h *DoctorHandler) AuthenticateDoctor(c *gin.Context) {
 }
 
 func (h *DoctorHandler) GetAll(c *gin.Context) {
-    doctors, err := h.svc.GetAll()
+    log.Println("Received request to get all doctors")
+    clinicID := c.Param("clinicID")
+    id, err := strconv.Atoi(clinicID)
     if err != nil {
+        log.Println("Invalid clinic ID:", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid clinic ID"})
+        return
+    }
+    doctors, err := h.svc.GetAll(id)
+    if err != nil {
+        log.Println("Failed to get all doctors:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
@@ -44,8 +63,16 @@ func (h *DoctorHandler) GetAll(c *gin.Context) {
 }
 
 func (h *DoctorHandler) Update(c *gin.Context) {
+    clinicID := c.Param("clinicID")
+    clinicIDInt, err := strconv.Atoi(clinicID)
+    if err != nil {
+        log.Println("Invalid clinic ID:", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid clinic ID"})
+        return
+    }
     doctorID, err := strconv.Atoi(c.Param("doctorID"))
     if err != nil {
+        log.Println("Invalid doctor ID:", err)
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid doctor ID"})
         return
     }
@@ -59,9 +86,10 @@ func (h *DoctorHandler) Update(c *gin.Context) {
         return
     }
 
-    doctor, err := h.svc.Update(doctorID, req.Name, req.Email)
+    doctor, err := h.svc.Update(clinicIDInt, doctorID, req.Name, req.Email)
     if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Doctor not found"})
+        log.Println("Failed to update doctor:", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
