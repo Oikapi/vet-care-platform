@@ -21,6 +21,18 @@ services:
         paths: ['/management']
         strip_path: true
 
+  - name: forum-service
+    url: http://forum_backend:3000
+    routes:
+      - name: forum-route
+        paths: ['/forum']
+
+  - name: pets-service
+    url: http://pets:5000
+    routes:
+      - name: pets-route
+        paths: ['/pets']
+
   - name: frontend-service
     url: http://frontend:80
     routes:

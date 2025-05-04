@@ -57,6 +57,18 @@ const DashboardPage: React.FC = () => {
             ))}
           </Card>
         </Col>
+        <Col span={12}>
+          <Card title="Список Докторов" bordered={false}>
+            {doctors.map((doctor) => (
+              <Card>
+                <p key={doctor.id}>
+                  {doctor.firstName} — {doctor.lastName}
+                </p>
+                <p>{doctor.specialization}</p>
+              </Card>
+            ))}
+          </Card>
+        </Col>
       </Row>
 
       <Button

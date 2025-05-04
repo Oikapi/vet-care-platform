@@ -1,27 +1,25 @@
-// src/router.jsx
 import { createBrowserRouter } from 'react-router-dom';
-// import App from './App';
-// import AuthLayout from './layouts/AuthLayout';
-// import MainLayout from './layouts/MainLayout';
-// import RegisterPage from './pages/RegisterPage';
-// import { App } from 'antd';
 import RegisterPage from '../pages/RegisterPage';
-import App from '../App';
 import AuthLayout from '../layouts/AuthLayout';
 import LoginPage from '../pages/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
-// import LoginPage from './pages/LoginPage';
-// import HomePage from './pages/HomePage';
-// import ErrorPage from './pages/ErrorPage';
+import { MainLayout } from '../layouts/MainLayout';
+import PetsPage from '../pages/PetsPage';
+import ManagementPage from '../pages/ManagementPage';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <DashboardPage />,
+    element: <MainLayout />,
+    children: [
+      { path: '/', element: <DashboardPage /> },
+      { path: '/pets', element: <PetsPage /> },
+      { path: '/management', element: <ManagementPage /> },
+    ],
   },
   {
     path: '/',
-    element: <App />,
+    element: <MainLayout />,
     // errorElement: <ErrorPage />,
     children: [
       {

@@ -132,6 +132,28 @@ services:
       - mysql
     volumes:
       - ./packages/vet-app-auth:/usr/src/app
+  
+  forum_backend:
+    build:
+      context: ./packages/vet-app-forum
+      dockerfile: Dockerfile
+    container_name: forum_backend
+    restart: unless-stopped
+    ports:
+      - "3005:3000"  # Порт 3001 для этого сервиса
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_NAME: forum_db
+      JWT_SECRET: your_jwt_secret
+      NODE_ENV: development
+    depends_on:
+      - mysql
+    volumes:
+      - ./packages/vet-app-forum:/usr/src/app
 
   # Redis сервис
   redis:
