@@ -2,15 +2,16 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 	"vet-app-appointments/internal/models"
 	"vet-app-appointments/internal/notification"
 	"vet-app-appointments/internal/service"
 	"vet-app-appointments/pkg/errors"
 	"vet-app-appointments/pkg/logger"
+
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 type AppointmentHandler struct {
@@ -123,4 +124,26 @@ func (h *AppointmentHandler) GetAppointment(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, appointment)
+}
+
+type CreateSlotRequest struct {
+	DoctorID uint      `json:"doctor_id" binding:"required"`
+	SlotTime time.Time `json:"slot_time" binding:"required"`
+}
+
+func (h *AppointmentHandler) CreateSlot(c *gin.Context) {
+	var req CreateSlotRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		return
+	}
+
+	slot, err := h.service.CreateSlot(req.DoctorID, req.SlotTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create slot", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, slot)
 }

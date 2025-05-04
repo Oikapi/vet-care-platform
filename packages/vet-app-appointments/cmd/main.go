@@ -94,6 +94,7 @@ func main() {
 		api.POST("/", appointmentHandler.CreateAppointment)
 		api.GET("/slots/:clinic_id", appointmentHandler.GetAvailableSlots)
 		api.GET("/:id", appointmentHandler.GetAppointment)
+		api.POST("/slots", appointmentHandler.CreateSlot)
 	}
 
 	// Запуск сервера

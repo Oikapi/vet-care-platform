@@ -6,6 +6,7 @@ import DashboardPage from '../pages/DashboardPage';
 import { MainLayout } from '../layouts/MainLayout';
 import PetsPage from '../pages/PetsPage';
 import ManagementPage from '../pages/ManagementPage';
+import AppointmentsPage from '../pages/Appointment';
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <DashboardPage /> },
       { path: '/pets', element: <PetsPage /> },
       { path: '/management', element: <ManagementPage /> },
+      { path: '/appointment', element: <AppointmentsPage /> },
     ],
   },
   {

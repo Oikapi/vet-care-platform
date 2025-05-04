@@ -8,6 +8,7 @@ const items = [
   { key: '2', label: <Link to="/auth">Auth</Link> },
   { key: '3', label: <Link to="/pets">Pets</Link> },
   { key: '4', label: <Link to="/management">Management</Link> },
+  { key: '5', label: <Link to="/appointment">Appointment</Link> },
 ];
 
 export const MainLayout = () => {

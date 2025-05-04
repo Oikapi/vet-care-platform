@@ -28,6 +28,20 @@ func (s *AppointmentService) GetAvailableSlots(clinicID uint, date time.Time) ([
 	return s.repo.GetAvailableSlots(clinicID, date)
 }
 
+func (s *AppointmentService) CreateSlot(doctorID uint, slotTime time.Time) (*models.Slot, error) {
+	slot := &models.Slot{
+		DoctorID: doctorID,
+		SlotTime: slotTime,
+		IsBooked: false,
+	}
+
+	if err := s.repo.CreateSlot(slot); err != nil {
+		return nil, err
+	}
+
+	return slot, nil
+}
+
 func (s *AppointmentService) GetAppointment(id uint) (*models.Appointment, error) {
 	appointment, err := s.repo.GetAppointment(id)
 	if err != nil {

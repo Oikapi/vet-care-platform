@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 	"vet-app-appointments/internal/models"
+
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"time"
 )
 
 type AppointmentRepository struct {
@@ -21,6 +22,7 @@ type AppointmentRepositoryInterface interface {
 	GetAppointment(id uint) (*models.Appointment, error)
 	BookSlot(slotID uint) error
 	UnbookSlot(slotID uint) error
+	CreateSlot(slot *models.Slot) error
 	GetSlot(slotID uint) (*models.Slot, error)
 	GetDoctor(doctorID uint) (*models.Doctor, error)
 	GetClinic(clinicID uint) (*models.Clinic, error)
@@ -87,6 +89,14 @@ func (r *AppointmentRepository) GetSlot(slotID uint) (*models.Slot, error) {
 		return nil, err
 	}
 	return &slot, nil
+}
+
+func (r *AppointmentRepository) CreateSlot(slot *models.Slot) error {
+	result := r.db.Create(slot)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }
 
 func (r *AppointmentRepository) GetDoctor(doctorID uint) (*models.Doctor, error) {
