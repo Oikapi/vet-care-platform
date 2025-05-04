@@ -15,7 +15,6 @@ def register():
             gender=data.get("gender"),
             age=data.get("age"),
             user_id=data.get("user_id"),
-            image_path=data.get("image_path")
         )
         return jsonify({"message": "Pet registered", "id": pet_id}), 201
     except Exception as e:
