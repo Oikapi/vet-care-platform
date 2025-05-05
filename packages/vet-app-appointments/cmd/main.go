@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}
 
-	// Подключение к MySQL
+	// Подключение к MySQL (vetcare_appointments)
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.DBUser,
 		cfg.DBPassword,
@@ -37,27 +37,45 @@ func main() {
 		cfg.DBName,
 	)
 
-	// dbConn, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	// if err != nil {
-	// 	log.Fatalf("Ошибка подключения к MySQL: %v", err)
-	// }
-	var db *gorm.DB
+	var dbVetcare *gorm.DB
 	for i := 0; i < 100; i++ {
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		dbVetcare, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		if err == nil {
 			break
 		}
+		log.Infof("Попытка подключения к %s (%d/100): %v", cfg.DBName, i+1, err)
 		time.Sleep(5 * time.Second)
 	}
 	if err != nil {
-		log.Fatalf("Failed to initialize MySQL after retries: %v", err)
+		log.Fatalf("Failed to initialize MySQL (vetcare_appointments) after retries: %v", err)
+	}
+
+	// Подключение к MySQL (clinic_db)
+	dsnClinic := fmt.Sprintf("%s:%s@tcp(%s:%s)/clinic_db?charset=utf8mb4&parseTime=True&loc=Local",
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBHost,
+		cfg.DBPort,
+	)
+
+	var dbClinic *gorm.DB
+	for i := 0; i < 100; i++ {
+		dbClinic, err = gorm.Open(mysql.Open(dsnClinic), &gorm.Config{})
+		if err == nil {
+			break
+		}
+		log.Infof("Попытка подключения к clinic_db (%d/100): %v", i+1, err)
+		time.Sleep(5 * time.Second)
+	}
+	if err != nil {
+		log.Fatalf("Failed to initialize MySQL (clinic_db) after retries: %v", err)
 	}
 
 	// Подключение к Redis
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s", cfg.RedisAddr),
-		Password: cfg.RedisPassword, // Если есть пароль
-		DB:       0,                 // Используем 0-й Redis DB
+		Password: cfg.RedisPassword,
+		DB:       0,
 	})
 
 	// Проверка соединения с Redis
@@ -67,7 +85,8 @@ func main() {
 	}
 
 	// Инициализация репозиториев
-	appointmentRepo := repository.NewAppointmentRepository(db, redisClient)
+	appointmentRepo := repository.NewAppointmentRepository(dbVetcare, dbClinic, redisClient)
+
 	// Инициализация сервисов
 	doctorClient := client.NewHTTPUserServiceClient("http://auth_backend:3000")
 	appointmentService := service.NewAppointmentService(appointmentRepo, doctorClient)
@@ -82,7 +101,6 @@ func main() {
 	go telegramBot.Start()
 
 	// Инициализация обработчиков
-
 	appointmentHandler := handler.NewAppointmentHandler(appointmentService, telegramBot)
 
 	// Настройка Gin

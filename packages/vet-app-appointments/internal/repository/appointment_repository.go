@@ -11,8 +11,9 @@ import (
 )
 
 type AppointmentRepository struct {
-	db    *gorm.DB
-	redis *redis.Client
+	dbVetcare *gorm.DB // Для vetcare_appointments (slots, appointments)
+	dbClinic  *gorm.DB // Для clinic_db (doctors)
+	redis     *redis.Client
 }
 
 type AppointmentRepositoryInterface interface {
@@ -27,12 +28,16 @@ type AppointmentRepositoryInterface interface {
 	UpdateAppointment(appointment *models.Appointment) error
 }
 
-func NewAppointmentRepository(db *gorm.DB, redis *redis.Client) *AppointmentRepository {
-	return &AppointmentRepository{db: db, redis: redis}
+func NewAppointmentRepository(dbVetcare, dbClinic *gorm.DB, redis *redis.Client) *AppointmentRepository {
+	return &AppointmentRepository{
+		dbVetcare: dbVetcare,
+		dbClinic:  dbClinic,
+		redis:     redis,
+	}
 }
 
 func (r *AppointmentRepository) CreateAppointment(appointment *models.Appointment) error {
-	return r.db.Create(appointment).Error
+	return r.dbVetcare.Create(appointment).Error
 }
 
 func (r *AppointmentRepository) GetAvailableSlots(clinicID uint, date time.Time) ([]models.Slot, error) {
@@ -47,13 +52,16 @@ func (r *AppointmentRepository) GetAvailableSlots(clinicID uint, date time.Time)
 		}
 	}
 
-	// Запрашиваем из БД с JOIN на таблицу doctors
+	// Запрашиваем из БД с JOIN на таблицу doctors из clinic_db
 	start := date.Truncate(24 * time.Hour)
 	end := start.Add(24 * time.Hour)
-	err = r.db.Joins("JOIN doctors ON doctors.id = slots.doctor_id").
-		Where("doctors.clinic_id = ? AND slots.slot_time >= ? AND slots.slot_time < ? AND slots.is_booked = ?",
-			clinicID, start, end, false).
-		Find(&slots).Error
+	err = r.dbVetcare.Raw(`
+		SELECT slots.*
+		FROM slots
+		JOIN clinic_db.doctors ON slots.doctor_id = clinic_db.doctors.id
+		WHERE clinic_db.doctors.clinic_id = ? AND slots.slot_time >= ? AND slots.slot_time < ? AND slots.is_booked = ?`,
+		clinicID, start, end, false).
+		Scan(&slots).Error
 	if err != nil {
 		return nil, err
 	}
@@ -66,23 +74,23 @@ func (r *AppointmentRepository) GetAvailableSlots(clinicID uint, date time.Time)
 
 func (r *AppointmentRepository) GetAppointment(id uint) (*models.Appointment, error) {
 	var appointment models.Appointment
-	err := r.db.First(&appointment, id).Error
+	err := r.dbVetcare.First(&appointment, id).Error
 	return &appointment, err
 }
 
 func (r *AppointmentRepository) BookSlot(slotID uint) error {
-	return r.db.Model(&models.Slot{}).Where("id = ? AND is_booked = ?", slotID, false).
+	return r.dbVetcare.Model(&models.Slot{}).Where("id = ? AND is_booked = ?", slotID, false).
 		Updates(map[string]interface{}{"is_booked": true}).Error
 }
 
 func (r *AppointmentRepository) UnbookSlot(slotID uint) error {
-	return r.db.Model(&models.Slot{}).Where("id = ?", slotID).
+	return r.dbVetcare.Model(&models.Slot{}).Where("id = ?", slotID).
 		Updates(map[string]interface{}{"is_booked": false}).Error
 }
 
 func (r *AppointmentRepository) GetSlot(slotID uint) (*models.Slot, error) {
 	var slot models.Slot
-	err := r.db.First(&slot, slotID).Error
+	err := r.dbVetcare.First(&slot, slotID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +99,7 @@ func (r *AppointmentRepository) GetSlot(slotID uint) (*models.Slot, error) {
 
 func (r *AppointmentRepository) GetDoctor(doctorID uint) (*models.Doctor, error) {
 	var doctor models.Doctor
-	err := r.db.First(&doctor, doctorID).Error
+	err := r.dbClinic.First(&doctor, doctorID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +108,7 @@ func (r *AppointmentRepository) GetDoctor(doctorID uint) (*models.Doctor, error)
 
 func (r *AppointmentRepository) GetClinic(clinicID uint) (*models.Clinic, error) {
 	var clinic models.Clinic
-	err := r.db.First(&clinic, clinicID).Error
+	err := r.dbVetcare.First(&clinic, clinicID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -108,5 +116,5 @@ func (r *AppointmentRepository) GetClinic(clinicID uint) (*models.Clinic, error)
 }
 
 func (r *AppointmentRepository) UpdateAppointment(appointment *models.Appointment) error {
-	return r.db.Save(appointment).Error
+	return r.dbVetcare.Save(appointment).Error
 }

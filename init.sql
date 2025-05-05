@@ -79,12 +79,11 @@ CREATE TABLE IF NOT EXISTS appointments (
   FOREIGN KEY (slot_id) REFERENCES slots(id)
 );
 
-INSERT INTO slots (id, created_at, updated_at, deleted_at, doctor_id, slot_time, is_booked)
-VALUES
-  (1, NOW(), NOW(), NULL, 101, '2025-05-04 09:00:00', FALSE),
-  (2, NOW(), NOW(), NULL, 101, '2025-05-04 10:00:00', TRUE),
-  (3, NOW(), NOW(), NULL, 102, '2025-05-05 11:00:00', FALSE),
-  (4, NOW(), NOW(), NULL, 103, '2025-05-05 12:00:00', TRUE);
+INSERT INTO slots (id, created_at, updated_at, deleted_at, doctor_id, slot_time, is_booked) VALUES
+(1, NOW(), NOW(), NULL, 1, '2025-05-05 09:00:00', FALSE),
+(2, NOW(), NOW(), NULL, 1, '2025-05-05 10:00:00', TRUE),
+(3, NOW(), NOW(), NULL, 2, '2025-05-05 11:00:00', FALSE),
+(4, NOW(), NOW(), NULL, 2, '2025-05-05 12:00:00', TRUE);
 
 INSERT INTO appointments (id, created_at, updated_at, deleted_at, client_id, doctor_id, clinic_id, slot_id, status, telegram_id)
 VALUES

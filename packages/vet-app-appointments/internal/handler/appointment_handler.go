@@ -94,8 +94,22 @@ func (h *AppointmentHandler) CreateAppointment(c *gin.Context) {
 }
 
 func (h *AppointmentHandler) GetAvailableSlots(c *gin.Context) {
-	clinicID, _ := strconv.Atoi(c.Param("clinic_id"))
+	clinicID, err := strconv.Atoi(c.Param("clinic_id"))
+	if err != nil {
+		h.log.Errorf("Неверный clinic_id: %v", err)
+		c.JSON(http.StatusBadRequest, errors.NewErrorResponse("Неверный clinic_id"))
+		return
+	}
+
+	// Получаем параметр date, если не указан — используем текущую дату
 	dateStr := c.Query("date")
+	if dateStr == "" {
+		dateStr = time.Now().Format("2006-01-02")
+		h.log.Infof("Параметр date не указан, используется текущая дата: %s", dateStr)
+	}
+
+	h.log.Infof("Получение слотов для clinic_id: %d, date: %s", clinicID, dateStr)
+
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
 		h.log.Errorf("Неверный формат даты: %v", err)
@@ -114,7 +128,13 @@ func (h *AppointmentHandler) GetAvailableSlots(c *gin.Context) {
 }
 
 func (h *AppointmentHandler) GetAppointment(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		h.log.Errorf("Неверный id: %v", err)
+		c.JSON(http.StatusBadRequest, errors.NewErrorResponse("Неверный id"))
+		return
+	}
+
 	appointment, err := h.service.GetAppointment(uint(id))
 	if err != nil {
 		h.log.Errorf("Запись не найдена: %v", err)
