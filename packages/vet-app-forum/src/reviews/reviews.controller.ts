@@ -1,16 +1,43 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Body,
+    Get,
+    Param,
+    BadRequestException
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
-import { ReviewResponseDto } from './dto/review-response.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Controller('clinics/:clinicId/reviews')
 export class ReviewsController {
     constructor(private readonly reviewsService: ReviewsService) { }
 
-    @Get()
-    async getReviews(
+    @Post()
+    async create(
         @Param('clinicId') clinicId: number,
-    ): Promise<ReviewResponseDto[]> {
-        console.log(123)
-        return this.reviewsService.getReviews(clinicId);
+        @Body() createReviewDto: CreateReviewDto
+    ) {
+        try {
+            return await this.reviewsService.createReview(
+                createReviewDto.userId,
+                {
+                    clinicId,
+                    rating: createReviewDto.rating,
+                    comment: createReviewDto.comment
+                }
+            );
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
+    }
+
+    @Get()
+    async getReviews(@Param('clinicId') clinicId: number) {
+        try {
+            return await this.reviewsService.getClinicReviews(clinicId);
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
     }
 }

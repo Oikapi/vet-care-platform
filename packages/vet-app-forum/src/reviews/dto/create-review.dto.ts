@@ -1,5 +1,18 @@
+import { IsInt, Min, Max, IsOptional, IsString } from 'class-validator';
+
 export class CreateReviewDto {
+    @IsInt()
+    userId: number; // Добавляем userId
+
+    @IsInt()
     clinicId: number;
-    rating: number; // 1-5
+
+    @IsInt()
+    @Min(1)
+    @Max(5)
+    rating: number;
+
+    @IsString()
+    @IsOptional()
     comment?: string;
 }

@@ -5,10 +5,10 @@ export class Review {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column('int')
-    clinicId!: number;
+    @Column({ name: 'clinic_id' })
+    clinicId: number;
 
-    @Column('int')
+    @Column('int', { name: 'user_id' })
     authorId!: number;
 
     @Column('int')
@@ -17,6 +17,16 @@ export class Review {
     @Column('text', { nullable: true })
     comment?: string;
 
-    @Column('timestamp', { default: () => 'CURRENT_TIMESTAMP' })
+    @Column('timestamp', {
+        name: 'created_at',
+        default: () => 'CURRENT_TIMESTAMP'
+    })
     createdAt!: Date;
+
+    @Column('timestamp', {
+        name: 'updated_at',
+        nullable: true,
+        onUpdate: 'CURRENT_TIMESTAMP' // Автообновление
+    })
+    updatedAt?: Date;
 }
